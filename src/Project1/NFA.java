@@ -48,4 +48,128 @@ public class NFA {
     }
 
     //endregion
+
+    //region Helper Functions
+
+    public Set<String> getLambdaClosure(String startState) {
+        /*
+        Return the lambda closure for the given state.
+
+        The lambda closure of a state q is the set containing q, along with
+        every state that can be reached from q by following only lambda
+        transitions.
+         */
+        Stack<String> stack = new Stack<>();
+        Set<String> encounteredStates = new TreeSet<>();
+        stack.push(startState);
+
+        while (!stack.isEmpty()){
+            String state = stack.pop();
+            if (!encounteredStates.contains(state)) {
+                encounteredStates.add(state);
+                if (transitions.containsKey(state)) {
+                    if (transitions.get(state).containsKey('~'))
+                        stack.addAll(transitions.get(state).get('~'));
+                }
+            }
+        }
+
+        return encounteredStates;
+    }
+
+    public Set<String> getNextCurrentStates(Set<String> currentStates, Character inputSymbol){
+        //Return the next set of current states given the current set.
+        Set<String> nextCurrerntStates = new TreeSet<>();
+        for (String currentState: currentStates){
+            if (transitions.containsKey(currentState)) {
+                if (transitions.get(currentState).containsKey(inputSymbol)) {
+                    if (transitions.get(currentState).get(inputSymbol) != null) {
+                        List<String> symbolEndStates = transitions.get(currentState).get(inputSymbol);
+                        if (!symbolEndStates.isEmpty()) {
+                            for (String endState : symbolEndStates) {
+                                nextCurrerntStates.addAll(getLambdaClosure(endState));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return nextCurrerntStates;
+    }
+
+    public DFA convertNFAToDFA() {
+        //Initialize this NFA as one equivalent to the given DFA.
+        return new DFA().CreateEquivalentDFA(this);
+    }
+
+    // region Validate functions
+    public boolean validateInvalidSymbols(String startState, Map<Character, List<String>> path) {
+        for (Character inputSymbol : path.keySet()) {
+            if (!alphabets.contains(inputSymbol) && inputSymbol != '~') {
+                System.out.printf("State %s has invalid transition symbol %c", startState, inputSymbol);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean validateTransitionEndStates(String startState, Map<Character, List<String>> path) {
+        //Raise an error if transition end states are invalid.
+        for (List<String> endStates : path.values()) {
+            for (String endState : endStates) {
+                if (!states.contains(endState)) {
+                    System.out.printf("End state %s for transition on %s is not valid", endState, startState);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean validateInitialState() {
+        //Raise an error if the initial state is invalid.
+        if (!this.states.contains(initialState)) {
+            System.out.printf("%s is not a valid initial state", this.initialState);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean validateInitialStateTransition() {
+        //Raise an error if the initial state has no transitions defined.
+        if (!this.transitions.containsKey(this.initialState)) {
+            System.out.printf("Initial state %s has no transitions defined!", this.initialState);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean validateFinalStates() {
+        //Raise an error if any final states are invalid.
+        Set<String> invalidStates = new HashSet<>(this.finalStates);
+        invalidStates.removeAll(this.states);
+        if (invalidStates.size() > 0) {
+            System.out.println("final states" + invalidStates.toString() + "are not valid");
+            return false;
+        }
+        return true;
+    }
+
+    public boolean validate() {
+        //Return True if this NFA is internally consistent.
+        for (String startState : transitions.keySet()) {
+            Map<Character, List<String>> path = transitions.get(startState);
+            if (!validateInvalidSymbols(startState, path))
+                return false;
+            if (!validateTransitionEndStates(startState, path))
+                return false;
+        }
+        if (!validateInitialState()) return false;
+        if (!validateInitialStateTransition()) return false;
+        return validateFinalStates();
+    }
+    //endregion
+
+    //endregion
 }
