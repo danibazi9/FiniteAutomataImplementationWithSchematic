@@ -1,6 +1,0 @@
-5
-<START> -> <SUBJECT><DISTANCE><VERB><DISTANCE><OBJECTS>
-<SUBJECT> -> i|we
-<DISTANCE> ->  
-<VERB> -> eat|drink|go
-<OBJECTS> -> food|water|lambda
